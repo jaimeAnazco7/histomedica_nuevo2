@@ -8,11 +8,40 @@ if (!isset($_SESSION['login_user']) || $_SESSION['user_role'] != 'patient') {
     die();
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Obtener el user_id del paciente actualmente autenticado
-    $user_id = $_SESSION['login_user_id'];
+// Función para obtener el número de miembros de la familia
+function getFamilyMembersCount($user_id, $db) {
+    $sql = "SELECT COUNT(*) as count FROM family_members WHERE patient_id = (SELECT id FROM patients WHERE user_id = '$user_id')";
+    $result = mysqli_query($db, $sql);
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        return $row['count'];
+    }
+    return 0;
+}
 
-    // Obtener datos del formulario
+// Función para obtener el plan del usuario
+function getUserPlan($user_id, $db) {
+    $sql = "SELECT plan FROM users WHERE id = '$user_id'";
+    $result = mysqli_query($db, $sql);
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        return $row['plan'];
+    }
+    return null;
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $user_id = $_SESSION['login_user_id'];
+    $plan = getUserPlan($user_id, $db);
+    $family_members_count = getFamilyMembersCount($user_id, $db);
+
+    // Verificar los límites según el plan
+    if (($plan == 'free' && $family_members_count >= 1) || ($plan == 'silver' && $family_members_count >= 5)) {
+        $_SESSION['error'] = "No puedes agregar más familiares con tu plan actual.";
+        header("location: dashboard_patient.php");
+        exit;
+    }
+
     $first_name = mysqli_real_escape_string($db, $_POST['first_name']);
     $last_name = mysqli_real_escape_string($db, $_POST['last_name']);
     $date_of_birth = mysqli_real_escape_string($db, $_POST['date_of_birth']);
@@ -30,17 +59,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $chronic_subcategory = mysqli_real_escape_string($db, $_POST['chronic_subcategory']);
     $observations = mysqli_real_escape_string($db, $_POST['observations']);
 
-    // Verificar si el user_id existe en la tabla patients
     $check_patient_sql = "SELECT * FROM patients WHERE user_id = '$user_id'";
     $result = mysqli_query($db, $check_patient_sql);
 
     if (mysqli_num_rows($result) > 0) {
-        // Obtener el id del paciente correspondiente
         $patient_data = mysqli_fetch_assoc($result);
         $patient_id = $patient_data['id'];
 
-        // Insertar el familiar con el patient_id obtenido
-        $sql = "INSERT INTO family_members (patient_id, first_name, last_name, date_of_birth, gender, marital_status, age, weight, blood_type, phone, address, email, relationship, lens_prescription, chronic_category, chronic_subcategory, observations) VALUES ('$patient_id', '$first_name', '$last_name', '$date_of_birth', '$gender', '$marital_status', '$age', '$weight', '$blood_type', '$phone', '$address', '$email', '$relationship', '$lens_prescription', '$chronic_category', '$chronic_subcategory', '$observations')";
+        $sql = "INSERT INTO family_members (patient_id, first_name, last_name, date_of_birth, gender, marital_status, age, weight, blood_type, phone, address, email, relationship, lens_prescription, chronic_category, chronic_subcategory, observations) 
+                VALUES ('$patient_id', '$first_name', '$last_name', '$date_of_birth', '$gender', '$marital_status', '$age', '$weight', '$blood_type', '$phone', '$address', '$email', '$relationship', '$lens_prescription', '$chronic_category', '$chronic_subcategory', '$observations')";
 
         if (mysqli_query($db, $sql)) {
             $_SESSION['message'] = "Nuevo familiar agregado correctamente";

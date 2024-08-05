@@ -55,7 +55,6 @@ while ($row = mysqli_fetch_assoc($result_categories)) {
     ];
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -188,7 +187,7 @@ while ($row = mysqli_fetch_assoc($result_categories)) {
                                         <?php if (array_key_exists($subcategory['id'], $patient_subcategories)) echo 'selected'; ?>>
                                         <?php echo htmlspecialchars($subcategory['name']); ?>
                                     </option>
-                                <?php endforeach; ?>
+                                    <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="subcategory-container-wrapper">
@@ -245,3 +244,4 @@ while ($row = mysqli_fetch_assoc($result_categories)) {
     </script>
 </body>
 </html>
+

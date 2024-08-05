@@ -1,5 +1,3 @@
-
-
 <?php
 session_start();
 include('config.php');
@@ -8,7 +6,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = mysqli_real_escape_string($db, $_POST['username']);
     $password = mysqli_real_escape_string($db, $_POST['password']); 
 
-    $sql = "SELECT id, role FROM users WHERE username = '$username' and password = '$password'";
+    $sql = "SELECT id, role, username FROM users WHERE username = '$username' and password = '$password'";
     $result = mysqli_query($db, $sql);
     $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
     $count = mysqli_num_rows($result);
@@ -16,7 +14,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     if($count == 1) {
         $_SESSION['login_user'] = $username;
         $_SESSION['user_role'] = $row['role'];
-        $_SESSION['login_user_id'] = $row['id']; // Añadir esta línea
+        $_SESSION['login_user_id'] = $row['id'];
+        $_SESSION['username'] = $row['username'];
         header("location: dashboard.php");
     } else {
         $error = "Tu nombre de usuario o contraseña es inválido";
@@ -49,7 +48,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-bottom: 20px;
         }
         .login-container input[type="text"],
-        .login-container input[type="password"] {
+        .login-container input[type="password"],
+        .login-container select {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
@@ -83,6 +83,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
             <input type="submit" value="Iniciar sesión">
         </form>
         <p><a href="register.php">Registrarse</a></p>
+        <?php if(isset($error)) { echo "<p style='color:red;'>$error</p>"; } ?>
     </div>
 </body>
 </html>
